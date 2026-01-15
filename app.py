@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 from datetime import datetime
 import plotly.express as px
+import os
 
 # Page configuration
 st.set_page_config(
@@ -19,7 +20,12 @@ Data source: [Building Permits - Active Permits](https://open.toronto.ca/dataset
 """)
 
 # Data source URL - using the CSV download link from Toronto Open Data
-DATA_URL = "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/building-permits-active-permits/resource/d95fdb1f-3191-42b1-822a-6929b21c7ef9/download/building-permits-active-permits.csv"
+# This URL can be overridden by setting STREAMLIT_DATA_URL environment variable
+import os
+DATA_URL = os.getenv(
+    "STREAMLIT_DATA_URL",
+    "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/building-permits-active-permits/resource/d95fdb1f-3191-42b1-822a-6929b21c7ef9/download/building-permits-active-permits.csv"
+)
 
 @st.cache_data(ttl=3600)  # Cache for 1 hour
 def load_data():
@@ -60,7 +66,8 @@ if df is not None:
     
     with col4:
         if 'CURRENT_VALUE' in df.columns and df['CURRENT_VALUE'].notna().any():
-            total_value = df['CURRENT_VALUE'].sum()
+            # Convert to numeric, handling any non-numeric values
+            total_value = pd.to_numeric(df['CURRENT_VALUE'], errors='coerce').sum()
             st.metric("Total Value", f"${total_value:,.0f}")
     
     # Sidebar filters
@@ -127,8 +134,12 @@ if df is not None:
             timeline_df = filtered_df[filtered_df['ISSUED_DATE'].notna()].copy()
             
             if len(timeline_df) > 0:
-                timeline_df['Year-Month'] = timeline_df['ISSUED_DATE'].dt.to_period('M').astype(str)
+                timeline_df['Year-Month'] = timeline_df['ISSUED_DATE'].dt.to_period('M')
                 timeline_counts = timeline_df.groupby('Year-Month').size().reset_index(name='Count')
+                # Sort by period to maintain chronological order
+                timeline_counts = timeline_counts.sort_values('Year-Month')
+                # Convert to string only for display after sorting
+                timeline_counts['Year-Month'] = timeline_counts['Year-Month'].astype(str)
                 
                 fig = px.line(
                     timeline_counts,
