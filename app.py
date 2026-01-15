@@ -21,7 +21,6 @@ Data source: [Building Permits - Active Permits](https://open.toronto.ca/dataset
 
 # Data source URL - using the CSV download link from Toronto Open Data
 # This URL can be overridden by setting STREAMLIT_DATA_URL environment variable
-import os
 DATA_URL = os.getenv(
     "STREAMLIT_DATA_URL",
     "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/building-permits-active-permits/resource/d95fdb1f-3191-42b1-822a-6929b21c7ef9/download/building-permits-active-permits.csv"
